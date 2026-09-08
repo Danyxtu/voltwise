@@ -24,6 +24,7 @@ import { useUnits } from "../../context/UnitsContext";
 import { useDemoData } from "../../context/DemoDataContext";
 import { demoAnalytics } from "../../lib/demo-data";
 import RangeNavigator from "../../components/RangeNavigator";
+import DeviceUsageChart from "../../components/DeviceUsageChart";
 import { getStoredBillingCycle, saveBillingCycle } from "../../lib/billing-storage";
 import {
   defaultRangeState,
@@ -231,6 +232,8 @@ export default function AnalyticsScreen() {
   const topConsumers = view !== null ? view.topConsumers : TOP_CONSUMERS;
   const totalKwh     = view?.totalKwh     ?? 87.4;
   const metrics      = view?.metrics      ?? FALLBACK_METRICS;
+  const visibleLabels = view?.deviceHistory?.labels ?? [];
+  const deviceSeries  = view?.deviceHistory?.series ?? [];
   // The rate and currency are no longer read off this payload — they come from
   // the shared unit preferences, which are the same values the backend computed
   // with (see context/UnitsContext.tsx) and stay right even offline.
@@ -351,7 +354,7 @@ export default function AnalyticsScreen() {
           </Text>
         </View>
 
-        {/* Timeline. Governs everything below: the breakdown, the top
+        {/* Timeline. Governs everything below: the device trends, breakdown, the top
             consumers and the metric stats all follow this range. Shared with
             the Dashboard so the two screens describe time identically. */}
         <View style={styles.navigatorWrap}>
@@ -361,6 +364,17 @@ export default function AnalyticsScreen() {
             onCycleSave={handleCycleSave}
           />
         </View>
+
+        {/* Device Usage Trends */}
+        <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
+          Device Usage Trends
+        </Text>
+        <DeviceUsageChart
+          labels={visibleLabels}
+          series={deviceSeries}
+          period={range.period}
+          rangeLabelText={rangeLabel(range)}
+        />
 
         {/* Usage Breakdown donut */}
         <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>

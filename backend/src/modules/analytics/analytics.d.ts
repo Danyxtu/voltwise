@@ -4,7 +4,7 @@
 // One definition of a period for the whole codebase — see src/lib/range.ts.
 // "Cycle" is a user-defined billing window (from/to).
 export type { RangePeriod as AnalyticsPeriod } from "../../lib/range.ts";
-export type { RangeSummaryDto } from "../dashboard/dashboard";
+export type { RangeSummaryDto, DashboardDeviceHistoryDto } from "../dashboard/dashboard";
 
 // The bill predictor card at the top of the analytics screen.
 export interface BillPredictorDto {
@@ -52,6 +52,7 @@ export interface MetricStatDto {
 export interface AnalyticsResponseDto {
   billPredictor: BillPredictorDto;
   totalKwh: number;
+  deviceHistory: DashboardDeviceHistoryDto;
   breakdown: BreakdownEntryDto[];
   topConsumers: TopConsumerDto[];
   metrics: MetricStatDto[];

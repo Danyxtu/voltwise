@@ -14,12 +14,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from "react-native-chart-kit";
 import { api, checkHealth, DashboardData, DashboardDevice, IotStatus, Reading } from "../../lib/api";
 import { useMqtt } from "../../context/MqttContext";
 import { useDemoData } from "../../context/DemoDataContext";
 import { demoDashboard, demoLiveReading } from "../../lib/demo-data";
 import RangeNavigator from "../../components/RangeNavigator";
+import DeviceUsageChart from "../../components/DeviceUsageChart";
 import { getStoredBillingCycle, saveBillingCycle } from "../../lib/billing-storage";
 import {
   defaultRangeState,
@@ -123,16 +123,6 @@ export default function DashboardScreen() {
   // null until real telemetry arrives — the grid renders "—" until then.
   const [liveMetrics, setLiveMetrics]     = useState<LiveMetrics | null>(null);
 
-  // Which chart point the user tapped, in SVG coordinates from chart-kit.
-  // null = no tooltip on screen.
-  const [chartPoint, setChartPoint] = useState<{
-    deviceId: string;
-    pointIndex: number;
-    kwh: number;
-    x: number;
-    y: number;
-  } | null>(null);
-
   const [serverOnline, setServerOnline] = useState<boolean | null>(null);
   const [iotOnline, setIotOnline]       = useState<boolean | null>(null);
 
@@ -182,12 +172,6 @@ export default function DashboardScreen() {
     setDashboard(data);
     setCurrentKw(data.currentKw);
     setIotOnline(data.iotOnline ?? false);
-  }, [rangeKey]);
-
-  // The tooltip is pinned to coordinates on one particular axis, so drop it
-  // when the range changes rather than leaving it floating over new data.
-  useEffect(() => {
-    setChartPoint(null);
   }, [rangeKey]);
 
   // Refetch whenever the selected range changes.
@@ -408,26 +392,8 @@ export default function DashboardScreen() {
 
   // Chart data comes from the backend or not at all — an empty chart is the
   // honest answer when there are no readings, and a demo curve here would be
-  // indistinguishable from real consumption.
   const visibleLabels  = view?.deviceHistory.labels ?? [];
   const deviceSeries   = view?.deviceHistory.series ?? [];
-  // A day is 24 hourly points and a month up to 31 daily ones, so the axis
-  // shows every third or fourth label while the line keeps every point. The
-  // tooltip still reads `visibleLabels`, which is untouched, so a dot can name
-  // the exact hour it belongs to even where no label is drawn beneath it.
-  const axisLabels     = thinLabels(visibleLabels, 8, axisLabelStep(range.period));
-  const dotRadius      = dotRadiusFor(visibleLabels.length);
-
-  // Chart geometry, needed both to draw and to keep the tooltip on screen.
-  const CHART_WIDTH = SCREEN_WIDTH - 32;
-  const TOOLTIP_WIDTH = 156;
-
-  // Resolve the tapped point back to its device. A series that vanished on
-  // refresh (device deleted, or no usage in the new period) leaves the tooltip
-  // with nothing to describe, so it renders as nothing.
-  const tooltipSeries = chartPoint
-    ? deviceSeries.find((series) => series.deviceId === chartPoint.deviceId)
-    : undefined;
   const devices        = view?.devices        ?? [];
   const topConsumers   = view?.topConsumers   ?? [];
   const totalToday     = view?.totalTodayKwh  ?? 0;
@@ -677,143 +643,12 @@ export default function DashboardScreen() {
             />
           </View>
 
-          <View style={styles.chartCard}>
-            {deviceSeries.length === 0 ? (
-              <View style={styles.chartEmpty}>
-                <Ionicons name="analytics-outline" size={32} color={colors.sub} />
-                <Text style={styles.chartEmptyText}>
-                  No per-device usage recorded for {rangeLabel(range).toLowerCase()}.
-                </Text>
-              </View>
-            ) : (
-              <>
-                <View>
-                  <LineChart
-                    data={{
-                      labels: axisLabels,
-                      // One line per device. Each dataset carries its own colour so
-                      // the line matches its legend chip below, and its deviceId in
-                      // `key` — chart-kit hands the whole dataset back on tap but
-                      // not its index, and it never reads `key` itself.
-                      datasets: deviceSeries.map((series) => ({
-                        data: series.data,
-                        color: () => series.color,
-                        strokeWidth: 2,
-                        key: series.deviceId,
-                      })),
-                    }}
-                    width={CHART_WIDTH}
-                    height={200}
-                    // Dots are the tap targets — chart-kit binds the press handler
-                    // to each point's circle, so hiding them makes the chart inert.
-                    withDots
-                    onDataPointClick={({ index, value, x, y, dataset }) => {
-                      const deviceId = String(dataset.key ?? "");
-                      // Tapping the same point again dismisses it.
-                      setChartPoint((prev) =>
-                        prev &&
-                        prev.deviceId === deviceId &&
-                        prev.pointIndex === index
-                          ? null
-                          : { deviceId, pointIndex: index, kwh: value, x, y }
-                      );
-                    }}
-                    withShadow={false}
-                    withInnerLines={true}
-                    withOuterLines={false}
-                    withVerticalLines={false}
-                    withHorizontalLines={true}
-                    fromZero
-                    chartConfig={{
-                      backgroundColor: colors.card,
-                      backgroundGradientFrom: colors.card,
-                      backgroundGradientTo: colors.card,
-                      decimalPlaces: 1,
-                      // Per-dataset colours override this; it only tints the axes.
-                      color: () => colors.sub,
-                      labelColor: () => colors.sub,
-                      style: { borderRadius: 12 },
-                      // Dots inherit each dataset's colour. The card-coloured ring
-                      // keeps them readable where lines overlap, and the radius is
-                      // the finger target.
-                      propsForDots: { r: dotRadius, strokeWidth: "1.5", stroke: colors.card },
-                      propsForBackgroundLines: {
-                        stroke: colors.border,
-                        strokeDasharray: "4 4",
-                      },
-                    }}
-                    bezier
-                    style={styles.chart}
-                  />
-
-                  {chartPoint && tooltipSeries && (
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      onPress={() => setChartPoint(null)}
-                      style={[
-                        styles.tooltip,
-                        {
-                          width: TOOLTIP_WIDTH,
-                          // Centre on the point, then clamp inside the chart.
-                          left: Math.max(
-                            4,
-                            Math.min(
-                              chartPoint.x - TOOLTIP_WIDTH / 2,
-                              CHART_WIDTH - TOOLTIP_WIDTH - 4
-                            )
-                          ),
-                          // Above the point normally; below it when there is no
-                          // room, so the tooltip never leaves the chart.
-                          top: chartPoint.y > 78 ? chartPoint.y - 74 : chartPoint.y + 14,
-                          borderColor: tooltipSeries.color,
-                        },
-                      ]}
-                    >
-                      <View style={styles.tooltipHeader}>
-                        <View
-                          style={[
-                            styles.tooltipDot,
-                            { backgroundColor: tooltipSeries.color },
-                          ]}
-                        />
-                        <Text style={styles.tooltipName} numberOfLines={1}>
-                          {tooltipSeries.name}
-                        </Text>
-                      </View>
-                      <Text style={styles.tooltipPeriod}>
-                        {visibleLabels[chartPoint.pointIndex] ?? ""}
-                      </Text>
-                      <View style={styles.tooltipRow}>
-                        <Text style={styles.tooltipValue}>
-                          {formatEnergy(chartPoint.kwh, 2)}
-                        </Text>
-                        {/* Priced locally so the figure tracks the tariff the user
-                            set, matching how the rest of the app shows cost. */}
-                        <Text style={styles.tooltipCost}>
-                          {formatCostOf(chartPoint.kwh)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Custom legend rather than chart-kit's — with a line per
-                    device its built-in row overflows on a phone. */}
-                <View style={styles.legend}>
-                  {deviceSeries.map((series) => (
-                    <View key={series.deviceId} style={styles.legendItem}>
-                      <View
-                        style={[styles.legendDot, { backgroundColor: series.color }]}
-                      />
-                      <Text style={styles.legendLabel} numberOfLines={1}>
-                        {series.name}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
+          <DeviceUsageChart
+            labels={visibleLabels}
+            series={deviceSeries}
+            period={range.period}
+            rangeLabelText={rangeLabel(range)}
+          />
         </View>
 
         {/* Top Consumers */}
@@ -1128,111 +963,6 @@ function createStyles(colors: ThemeColors, fontScale: number) {
     },
     navigatorWrap: {
       marginBottom: 12,
-    },
-    chartCard: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      overflow: "hidden",
-    },
-    chart: {
-      borderRadius: 16,
-    },
-    // Floats over the chart, anchored to the tapped point. Absolute so it can
-    // sit above the SVG without pushing the layout around.
-    tooltip: {
-      position: "absolute",
-      backgroundColor: colors.card,
-      borderRadius: 10,
-      borderWidth: 1.5,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      gap: 2,
-      // Keeps it legible over the lines it covers.
-      shadowColor: "#000",
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 6,
-    },
-    tooltipHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    tooltipDot: {
-      width: 7,
-      height: 7,
-      borderRadius: 4,
-    },
-    tooltipName: {
-      color: colors.text,
-      fontSize: 12 * fontScale,
-      fontWeight: "700",
-      flexShrink: 1,
-    },
-    tooltipPeriod: {
-      color: colors.sub,
-      fontSize: 10 * fontScale,
-      fontWeight: "600",
-      letterSpacing: 0.4,
-    },
-    tooltipRow: {
-      flexDirection: "row",
-      alignItems: "baseline",
-      justifyContent: "space-between",
-      gap: 8,
-      marginTop: 2,
-    },
-    tooltipValue: {
-      color: colors.text,
-      fontSize: 14 * fontScale,
-      fontWeight: "700",
-    },
-    tooltipCost: {
-      color: colors.accent,
-      fontSize: 12 * fontScale,
-      fontWeight: "700",
-    },
-    // Wraps so a home with many devices grows the legend downward rather than
-    // clipping names off the right edge.
-    legend: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      paddingHorizontal: 12,
-      paddingTop: 4,
-      paddingBottom: 12,
-      gap: 8,
-    },
-    legendItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      paddingRight: 8,
-      maxWidth: "48%",
-    },
-    legendDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-    legendLabel: {
-      color: colors.sub,
-      fontSize: 11 * fontScale,
-      fontWeight: "600",
-      flexShrink: 1,
-    },
-    chartEmpty: {
-      height: 200,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-      paddingHorizontal: 24,
-    },
-    chartEmptyText: {
-      color: colors.sub,
-      fontSize: 13 * fontScale,
-      textAlign: "center",
-      lineHeight: 19 * fontScale,
     },
     consumersCard: {
       backgroundColor: colors.card,

@@ -61,7 +61,7 @@ const CONSUMER_COLORS = [
 //
 // Accepts userId (number) and the resolved range.
 // Returns a Promise resolving to a DashboardDeviceHistoryDto.
-const buildDeviceHistory = async (
+export const buildDeviceHistory = async (
   userId: number,
   range: ResolvedRange
 ): Promise<DashboardDeviceHistoryDto> => {

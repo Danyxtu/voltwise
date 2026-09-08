@@ -586,6 +586,8 @@ export function demoAnalytics(state: RangeState, now: Date = new Date()): Analyt
         2
       );
 
+  const labels = buckets.map((bucket) => bucket.label);
+
   return {
     billPredictor: {
       tariff: DEMO_RATE,
@@ -596,6 +598,10 @@ export function demoAnalytics(state: RangeState, now: Date = new Date()): Analyt
       cycleEnd: isCycle ? formatCycleDate(to) : null,
     },
     totalKwh,
+    deviceHistory: {
+      labels,
+      series: series.map(({ total: _total, ...rest }) => rest),
+    },
     breakdown: consumers.map((slice) => ({
       label: slice.name,
       pct: slice.pct,

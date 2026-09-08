@@ -7,6 +7,7 @@
 import { prisma } from "../../lib/prisma.ts";
 import type { ResolvedRange } from "../../lib/range.ts";
 import { getLatestTariff } from "../../lib/tariff.ts";
+import { buildDeviceHistory } from "../dashboard/dashboard.service.ts";
 import type {
   AnalyticsResponseDto,
   BillPredictorDto,
@@ -345,14 +346,16 @@ export const getAnalyticsData = async (
     cycleEnd: isCycle ? formatCycleStartDate(range.end) : null,
   };
 
-  const [{ breakdown, topConsumers }, metrics] = await Promise.all([
+  const [{ breakdown, topConsumers }, metrics, deviceHistory] = await Promise.all([
     buildBreakdownAndTopConsumers(userId, start, end, tariff.ratePerKwh),
     buildMetricStats(userId, start, end),
+    buildDeviceHistory(userId, range),
   ]);
 
   return {
     billPredictor,
     totalKwh,
+    deviceHistory,
     breakdown,
     topConsumers,
     metrics,

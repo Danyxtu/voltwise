@@ -422,6 +422,10 @@ export interface AnalyticsData {
     cycleEnd: string | null;
   };
   totalKwh: number;
+  deviceHistory: {
+    labels: string[];
+    series: { deviceId: string; name: string; color: string; data: number[] }[];
+  };
   breakdown: { label: string; pct: number; color: string; kwh: number; cost: number }[];
   topConsumers: ConsumerSlice[];
   metrics: MetricStat[];
