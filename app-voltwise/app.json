@@ -17,7 +17,14 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/voltwise-logo/enhanced-voltwise-logo.png",
         "backgroundColor": "#1a1f2e"
-      }
+      },
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ],
+      "package": "com.danyxtu018.VoltWise"
     },
     "web": {
       "output": "static",
@@ -44,6 +51,19 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "192a456b-01f9-40ea-aac6-f148ba2a9b06"
+      }
+    },
+    "owner": "danyxtu018",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/192a456b-01f9-40ea-aac6-f148ba2a9b06"
     }
   }
 }
