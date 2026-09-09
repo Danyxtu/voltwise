@@ -72,7 +72,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     saveFontSize(next).catch(() => {});
   }, []);
 
-  const colorScheme: ColorScheme = mode === "system" ? systemScheme ?? "dark" : mode;
+  const colorScheme: ColorScheme =
+    mode === "system"
+      ? systemScheme === "light"
+        ? "light"
+        : "dark"
+      : mode;
   const colors = useMemo(() => getColors(colorScheme), [colorScheme]);
   const fontScale = FONT_SCALES[fontSize];
 

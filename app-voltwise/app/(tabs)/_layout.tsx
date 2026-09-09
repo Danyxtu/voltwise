@@ -7,10 +7,9 @@ import {
   Text,
   StyleSheet,
   DeviceEventEmitter,
+  Pressable,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { PlatformPressable } from "@react-navigation/elements";
-import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import DemoFab from "../../components/DemoFab";
 import ConfirmModal from "../../components/ConfirmModal";
 import { api, ApiAlert, ALERTS_CHANGED_EVENT, emitAlertsChanged } from "../../lib/api";
@@ -21,9 +20,9 @@ import { useTheme } from "../../context/ThemeContext";
 import { useThemedStyles } from "../../components/themed";
 import type { ThemeColors } from "../../constants/theme";
 
-function HapticTab(props: BottomTabBarButtonProps) {
+function HapticTab(props: any) {
   return (
-    <PlatformPressable
+    <Pressable
       {...props}
       onPressIn={(ev) => {
         if (Platform.OS === "ios") {

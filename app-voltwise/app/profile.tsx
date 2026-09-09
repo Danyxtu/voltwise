@@ -17,7 +17,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import { useTheme } from "../context/ThemeContext";
-import { useUnits } from "../context/UnitsContext";
 import { useThemedStyles } from "../components/themed";
 import type { ThemeColors } from "../constants/theme";
 
@@ -112,7 +111,6 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { currency } = useUnits();
 
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
@@ -324,12 +322,6 @@ export default function ProfileScreen() {
                 icon="location-outline"
                 label="Region"
                 value="Philippines"
-              />
-              {/* Follows the choice made in Settings → Units & Tariff. */}
-              <InfoPill
-                icon="cash-outline"
-                label="Currency"
-                value={`${currency.label} (${currency.symbol})`}
               />
             </View>
           )}
@@ -743,7 +735,7 @@ function createStyles(colors: ThemeColors, fontScale: number) {
       position: "relative",
     },
     editCardHeaderAccent: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderRadius: 20,
     },
     editCardTitle: {

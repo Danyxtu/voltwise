@@ -14,7 +14,7 @@ The focal point of the application. Instead of focusing on _how_ the data gets t
 
 Without needing to implement complex edge-computing rules, the mobile app needs a reliable way to catch user attention during critical events.
 
-- **Push Notifications:** Alerts triggered by backend service rules (e.g., "Power consumption exceeded your threshold of 4.5 kW" or "Voltage drop detected").
+- **Alert Notifications:** In-app alerts triggered by backend service rules (e.g., "Power consumption exceeded your threshold of 4.5 kW" or "Voltage drop detected").
 - **Anomalous Behavior Log:** A simple, reverse-chronological feed within the app detailing recent alerts so users can review when and where spikes occurred.
 
 ## 3. Appliance & Device Management Profile

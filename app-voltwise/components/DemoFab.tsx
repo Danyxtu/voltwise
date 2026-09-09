@@ -297,7 +297,7 @@ export default function DemoFab() {
 function createStyles(colors: ThemeColors, fontScale: number) {
   return StyleSheet.create({
     backdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: colors.overlay,
     },
     wrap: {

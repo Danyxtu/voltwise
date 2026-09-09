@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Audio } from "expo-av";
+import { createAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import { useNotifications } from "../context/NotificationContext";
 import { useTheme } from "../context/ThemeContext";
@@ -40,16 +40,12 @@ function typeLabel(type: ModalAlertData["type"]): string {
 
 async function playSound(src: "beep" | "poweroff") {
   try {
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     const file =
       src === "beep"
         ? require("../assets/sounds/beep.wav")
         : require("../assets/sounds/poweroff.wav");
-    const { sound } = await Audio.Sound.createAsync(file);
-    await sound.playAsync();
-    sound.setOnPlaybackStatusUpdate((s) => {
-      if (s.isLoaded && s.didJustFinish) sound.unloadAsync();
-    });
+    const player = createAudioPlayer(file);
+    player.play();
   } catch {
     // audio unavailable — fail silently
   }
